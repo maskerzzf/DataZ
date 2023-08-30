@@ -1,5 +1,6 @@
 package org.io.test;
 
+import org.io.common.bean.ColumnMetaData;
 import org.io.common.util.DbUtil;
 
 import java.sql.*;
@@ -26,11 +27,11 @@ public class TestGetTable {
         ) {
             List<String> tables = DbUtil.listTables(sourceConnection, "school");
             Iterator<String> iterator = tables.stream().iterator();
-
+            Map<String, List<ColumnMetaData>> columnContainer = new ConcurrentHashMap<>();
             //检查数据库是否存在
             Statement targetStatement = targetConnection.createStatement();
             boolean databaseExists = DbUtil.checkDatabaseExists(targetStatement, targetDatabase);
-            if(databaseExists){
+            if (databaseExists) {
                 StringBuilder dropDateBaseSql = new StringBuilder();
                 dropDateBaseSql.append("DROP DATABASE ").append(targetDatabase);
                 targetStatement.execute(dropDateBaseSql.toString());
@@ -39,24 +40,25 @@ public class TestGetTable {
             StringBuilder createDatabaseSql = new StringBuilder();
             createDatabaseSql.append("CREATE DATABASE ").append(targetDatabase);
             targetStatement.execute(createDatabaseSql.toString());
-            while (iterator.hasNext()){
+            while (iterator.hasNext()) {
                 String tableName = iterator.next();
                 DatabaseMetaData sourceMetaData = sourceConnection.getMetaData();
                 ResultSet sourceTables = sourceMetaData.getTables(null, sourceUser, tableName, new String[]{"TABLE"});
-                ResultSet sourceIndex = sourceMetaData.getIndexInfo(null,sourceUser,tableName,false,false);
-
+                ResultSet sourceIndex = sourceMetaData.getIndexInfo(null, sourceUser, tableName, false, false);
+                columnContainer.put(tableName,null);
                 //使用表
                 StringBuilder useDatabaseSql = new StringBuilder();
                 useDatabaseSql.append("USE ").append(targetDatabase);
                 targetStatement.execute(useDatabaseSql.toString());
                 //复制表结构
-                while (sourceTables.next()){
+                ArrayList<ColumnMetaData> columnList = new ArrayList<>();
+                while (sourceTables.next()) {
                     //String tableName = sourceTables.getString("TABLE_NAME");
                     // 获取源表的列信息
                     ResultSet sourceColumns = sourceMetaData.getColumns(null, "root", tableName, null);
                     //检查表是否存在
                     boolean tableExists = DbUtil.checkTableExists(targetConnection, tableName);
-                    if(tableExists){
+                    if (tableExists) {
                         StringBuilder dropTableSql = new StringBuilder();
                         dropTableSql.append("DROP TABLE IF EXISTS ").append(tableName);
                         targetStatement.execute(dropTableSql.toString());
@@ -82,7 +84,16 @@ public class TestGetTable {
                         String columnDef = sourceColumns.getString("COLUMN_DEF");
                         //获取字符列的最大字节长度。
                         String charOctetLength = sourceColumns.getString("CHAR_OCTET_LENGTH");
-
+                        ColumnMetaData columnMetaData = new ColumnMetaData();
+                        columnMetaData.setColumnName(columnName);
+                        columnMetaData.setTypeName(typeName);
+                        columnMetaData.setColumnSize(columnSize);
+                        columnMetaData.setDataType(dataType);
+                        columnMetaData.setNullable(nullable);
+                        columnMetaData.setOrdinalPosition(ordinalPosition);
+                        columnMetaData.setColumnDef(columnDef);
+                        columnMetaData.setCharOctetLength(charOctetLength);
+                        columnList.add(columnMetaData);
                         // 添加列到创建表的 SQL 语句
                         createTableSql.append(columnName).append(" ").append(typeName).append("(").append(columnSize).append(")");
                         if (nullable.equals("NO")) {
@@ -90,15 +101,14 @@ public class TestGetTable {
                         }
                         createTableSql.append(", ");
                     }
-
                     createTableSql.setLength(createTableSql.length() - 2);  // 移除最后一个逗号和空格
                     createTableSql.append(")");
-
+                    //将表columns添加道容器
+                    columnContainer.put(tableName,columnList);
                     // 在目标数据库中创建表
                     targetStatement.execute(createTableSql.toString());
                     sourceColumns.close();
                 }
-                List<Object> index = new ArrayList<>();
                 //复制索引
                 while (sourceIndex.next()) {
                     //索引所属的表名称。
