@@ -1,0 +1,80 @@
+{
+  "core": {
+    "transport": {
+      "channel": {
+        "speed": {
+          "byte": 10485760,
+          "record": 100000
+        }
+      }
+    }
+  },
+  "job": {
+    "content": [
+      {
+        "reader": {
+          "parameter": {
+            "password": "root",
+            "column": [
+              "`id`",
+              "`name`",
+              "`gender`",
+              "`age`",
+              "`birthday`",
+              "`start_time`",
+              "`money`"
+            ],
+            "connection": [
+              {
+                "jdbcUrl": [
+                  "jdbc:mysql://localhost:3306/school?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false"
+                ],
+                "table": [
+                  "student"
+                ]
+              }
+            ],
+            "splitPk": "id",
+            "username": "root"
+          },
+          "name": "mysqlreader"
+        },
+        "writer": {
+          "parameter": {
+            "password": "root",
+            "column": [
+              "`id`",
+              "`name`",
+              "`gender`",
+              "`age`",
+              "`birthday`",
+              "`start_time`",
+              "`money`"
+            ],
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:mysql://localhost:3306/school?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false",
+                "table": [
+                  "student"
+                ]
+              }
+            ],
+            "username": "root"
+          },
+          "name": "mysqlwriter"
+        }
+      }
+    ],
+    "setting": {
+      "errorLimit": {
+        "record": 50000,
+        "percentage": 0.02
+      },
+      "speed": {
+        "byte": 20971520,
+        "channel": 20,
+        "record": 200000
+      }
+    }
+  }
+}

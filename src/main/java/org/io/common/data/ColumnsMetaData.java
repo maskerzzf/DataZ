@@ -3,7 +3,7 @@ package org.io.common.data;
 import lombok.Data;
 
 @Data
-public class ColumnMetaData {
+public class ColumnsMetaData {
     private String tableCat;
     private String tableSchem;
     private String tableName;

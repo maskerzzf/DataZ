@@ -1,13 +1,16 @@
 package org.io.common.resource;
 
-import org.io.common.data.ColumnMetaData;
+import org.io.common.data.ColumnsMetaData;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class ColumnResource {
-    public static ColumnMetaData getColumnMetaData(ResultSet sourceColumns) {
-        ColumnMetaData columnMetaData = new ColumnMetaData();
+/**
+ * 获取表的列信息
+ */
+public class ColumnsResource {
+    public static ColumnsMetaData getColumnMetaData(ResultSet sourceColumns) {
+        ColumnsMetaData columnsMetaData = new ColumnsMetaData();
         try {
             String tableCat = sourceColumns.getString("TABLE_CAT");
             String tableSchem = sourceColumns.getString("TABLE_SCHEM");
@@ -53,32 +56,32 @@ public class ColumnResource {
             //指示是否为生成列
             String isGeneratedColumn = sourceColumns.getString("IS_GENERATEDCOLUMN");
 
-            columnMetaData.setTableCat(tableCat);
-            columnMetaData.setTableSchem(tableSchem);
-            columnMetaData.setTableName(tableName);
-            columnMetaData.setColumnName(columnName);
-            columnMetaData.setDataType(dataType);
-            columnMetaData.setTypeName(typeName);
-            columnMetaData.setColumnSize(columnSize);
-            columnMetaData.setDecimalDigits(decimalDigits);
-            columnMetaData.setNumPrecRadix(numPrecRadix);
-            columnMetaData.setNullable(nullable);
-            columnMetaData.setRemarks(remarks);
-            columnMetaData.setColumnDef(columnDef);
-            columnMetaData.setSqlDataType(sqlDataType);
-            columnMetaData.setSqlDataType(sqlDataType);
-            columnMetaData.setCharOctetLength(charOctetLength);
-            columnMetaData.setOrdinalPosition(ordinalPosition);
-            columnMetaData.setIsNullable(isNullable);
-            columnMetaData.setScopeCatalog(scopeCatalog);
-            columnMetaData.setScopeSchema(scopeSchema);
-            columnMetaData.setScopeTable(scopeTable);
-            columnMetaData.setSourceDataType(sourceDataType);
-            columnMetaData.setIsAutoincrement(isAutoincrement);
-            columnMetaData.setIsGeneratedColumn(isGeneratedColumn);
+            columnsMetaData.setTableCat(tableCat);
+            columnsMetaData.setTableSchem(tableSchem);
+            columnsMetaData.setTableName(tableName);
+            columnsMetaData.setColumnName(columnName);
+            columnsMetaData.setDataType(dataType);
+            columnsMetaData.setTypeName(typeName);
+            columnsMetaData.setColumnSize(columnSize);
+            columnsMetaData.setDecimalDigits(decimalDigits);
+            columnsMetaData.setNumPrecRadix(numPrecRadix);
+            columnsMetaData.setNullable(nullable);
+            columnsMetaData.setRemarks(remarks);
+            columnsMetaData.setColumnDef(columnDef);
+            columnsMetaData.setSqlDataType(sqlDataType);
+            columnsMetaData.setSqlDataType(sqlDataType);
+            columnsMetaData.setCharOctetLength(charOctetLength);
+            columnsMetaData.setOrdinalPosition(ordinalPosition);
+            columnsMetaData.setIsNullable(isNullable);
+            columnsMetaData.setScopeCatalog(scopeCatalog);
+            columnsMetaData.setScopeSchema(scopeSchema);
+            columnsMetaData.setScopeTable(scopeTable);
+            columnsMetaData.setSourceDataType(sourceDataType);
+            columnsMetaData.setIsAutoincrement(isAutoincrement);
+            columnsMetaData.setIsGeneratedColumn(isGeneratedColumn);
         } catch (SQLException exception) {
 
         }
-        return columnMetaData;
+        return columnsMetaData;
     }
 }

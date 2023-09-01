@@ -3,7 +3,7 @@ package org.io.common.data;
 import lombok.Data;
 
 @Data
-public class IndexMetaData {
+public class IndexInfoMetaData {
     private String tableCat;
     private String tableSchem;
     private String tableName;
