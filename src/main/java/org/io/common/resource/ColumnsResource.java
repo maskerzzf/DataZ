@@ -70,6 +70,7 @@ public class ColumnsResource {
             columnsMetaData.setColumnDef(columnDef);
             columnsMetaData.setSqlDataType(sqlDataType);
             columnsMetaData.setSqlDataType(sqlDataType);
+            columnsMetaData.setSqlDatetimeSub(sqlDatetimeSub);
             columnsMetaData.setCharOctetLength(charOctetLength);
             columnsMetaData.setOrdinalPosition(ordinalPosition);
             columnsMetaData.setIsNullable(isNullable);

@@ -5,8 +5,8 @@ package org.io.common.enums;
  * 根据不同的数据库加载不同的驱动
  */
 public enum DatabaseTypeEnum {
-    MYSQL("mysql","com.mysql.jdbc.Driver"),
-    MYSQL8("mysql8","com.mysql.cj.jdbc.Driver"),
+
+    MYSQL("mysql","com.mysql.cj.jdbc.Driver"),
     SQLSERVER("sqlserver","com.microsoft.sqlserver.jdbc.SQLServerDriver")
     ;
     private String typeName;

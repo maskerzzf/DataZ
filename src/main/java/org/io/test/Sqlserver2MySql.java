@@ -1,14 +1,16 @@
 package org.io.test;
 
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.io.common.constant.SystemColumns;
+import org.io.common.constant.SystemConstants;
 import org.io.common.constant.TypeNames;
 import org.io.common.data.ColumnsMetaData;
 import org.io.common.data.DefaultRecord;
 import org.io.common.data.IndexInfoMetaData;
 import org.io.common.data.PrimaryKeysMetaData;
+import org.io.common.enums.DatabaseTypeEnum;
 import org.io.common.resource.ColumnsResource;
 import org.io.common.resource.IndexInfoResource;
 import org.io.common.resource.PrimaryKeysResource;
@@ -18,54 +20,42 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class GetColumnAndIndex {
-
-    public static Log log = LogFactory.getLog(GetColumnAndIndex.class);
-
-    public void run() {
-
-        //输入表
-        String sourceDatabase = "school";
-        String sourceUrl = "jdbc:mysql://localhost:3306/school";
-        String sourceUser = "root";
+public class Sqlserver2MySql {
+    public static Log log = LogFactory.getLog(Mysql2Mysql.class);
+    public void run() throws SQLException {
+        //输出数据库
+        String sourceUrl = "jdbc:sqlserver://localhost:1433;databaseName=school;trustServerCertificate=true";
+        String sourceUser = "sa";
         String sourcePassword = "root";
-        //输出表
+        String sourceDatabase = "school";
+        //输入数据库
+        String targetDatabase = "school1";
         String targetUrl = "jdbc:mysql://localhost:3306/school1";
         String targetUser = "root";
         String targetPassword = "root";
-        String targetDatabase = "school1";
-        //获取表
-        try (Connection sourceConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/school", "root", "root");
-             Connection targetConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/school1", "root", "root");
-        ) {
-            Statement sourceStatement = sourceConnection.createStatement();
 
-            List<String> tables = DbUtil.listTables(sourceConnection, "school");
+        //建立连接
+        try(
+        Connection sourceConnection = DbUtil.getConnectionWithoutRetry(DatabaseTypeEnum.MYSQL, sourceUrl, sourceUser, sourcePassword, "");
+        Connection targetConnection = DbUtil.getConnectionWithoutRetry(DatabaseTypeEnum.SQLSERVER,targetUrl,targetUser,targetPassword,"");
+        ){
+            Statement sourceStatement = sourceConnection.createStatement();
+            //Mysql 列出所有的表
+            List<String> tables = DbUtil.listSqlServerTables(sourceConnection);
             Iterator<String> iterator = tables.stream().iterator();
             //key 表名 value 表的列的元数据
             Map<String, List<ColumnsMetaData>> columnsContainer = new ConcurrentHashMap<>();
             //key 表名 value 索引的元数据
             Map<String, List<IndexInfoMetaData>> indexInfoContainer = new ConcurrentHashMap<>();
-            //
             Map<String, List<PrimaryKeysMetaData>> primaryKeysContainer = new ConcurrentHashMap<>();
             Map<String, List<DefaultRecord>> recordContainer = new ConcurrentHashMap<>();
-            //检查数据库是否存在
-//            Statement targetStatement = targetConnection.createStatement();
-//            boolean databaseExists = DbUtil.checkDatabaseExists(targetStatement, targetDatabase);
-//            if (databaseExists) {
-//                StringBuilder dropDateBaseSql = new StringBuilder();
-//                dropDateBaseSql.append("DROP DATABASE ").append(targetDatabase);
-//                targetStatement.execute(dropDateBaseSql.toString());
-//                log.info(dropDateBaseSql);
-//            }
-            //创建数据库
-//            StringBuilder createDatabaseSql = new StringBuilder();
-//            createDatabaseSql.append("CREATE DATABASE ").append(targetDatabase);
-//            targetStatement.execute(createDatabaseSql.toString());
             while (iterator.hasNext()) {
                 String tableName = iterator.next();
                 DatabaseMetaData sourceMetaData = sourceConnection.getMetaData();
@@ -73,26 +63,13 @@ public class GetColumnAndIndex {
                 ResultSet sourceKeys = sourceMetaData.getImportedKeys(null, null, tableName);
                 ResultSet sourceColumns = sourceMetaData.getColumns(null, null, tableName, null);
                 ResultSet sourcePrimaryKeys = sourceMetaData.getPrimaryKeys(null, null, tableName);
-                //使用表
-//                StringBuilder useDatabaseSql = new StringBuilder();
-//                useDatabaseSql.append("USE ").append(targetDatabase);
-//                targetStatement.execute(useDatabaseSql.toString());
                 //列结构
                 ArrayList<ColumnsMetaData> columnsList = new ArrayList<>();
                 //索引结构
                 ArrayList<IndexInfoMetaData> indexInfoList = new ArrayList<>();
                 //主键
                 ArrayList<PrimaryKeysMetaData> primaryKeysList = new ArrayList<>();
-                //String tableName = sourceTables.getString("TABLE_NAME");
-                // 获取源表的列信息
 
-                //检查表是否存在
-//                boolean tableExists = DbUtil.checkTableExists(targetConnection, tableName);
-//                if (tableExists) {
-//                    StringBuilder dropTableSql = new StringBuilder();
-//                    dropTableSql.append("DROP TABLE IF EXISTS ").append(tableName);
-//                    targetStatement.execute(dropTableSql.toString());
-//                }
                 //表字段
                 while (sourceColumns.next()) {
                     ColumnsMetaData columnsMetaData = ColumnsResource.getColumnMetaData(sourceColumns);
@@ -134,7 +111,7 @@ public class GetColumnAndIndex {
                                 try {
                                     ResultSet columnType = sourceStatement.executeQuery(findColumType);
                                     while (columnType.next()) {
-                                        createTableSql.append(columnType.getString(SystemColumns.COLUMN_TYPE) + ",");
+                                        createTableSql.append(columnType.getString(SystemConstants.COLUMN_TYPE) + ",");
                                     }
 
                                 } catch (SQLException e) {
@@ -278,6 +255,4 @@ public class GetColumnAndIndex {
             throw new RuntimeException(e);
         }
     }
-
-
 }
