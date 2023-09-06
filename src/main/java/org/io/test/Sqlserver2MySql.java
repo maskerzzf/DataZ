@@ -5,12 +5,11 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.io.common.constant.SystemConstants;
-import org.io.common.constant.TypeNames;
+import org.io.common.constant.TypeNameConstants;
 import org.io.common.data.ColumnsMetaData;
 import org.io.common.data.DefaultRecord;
 import org.io.common.data.IndexInfoMetaData;
 import org.io.common.data.PrimaryKeysMetaData;
-import org.io.common.enums.DatabaseTypeEnum;
 import org.io.common.resource.ColumnsResource;
 import org.io.common.resource.IndexInfoResource;
 import org.io.common.resource.PrimaryKeysResource;
@@ -30,12 +29,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Sqlserver2MySql {
     public static Log log = LogFactory.getLog(Mysql2Mysql.class);
     public void run() throws SQLException {
-        //输出数据库
+        //输入数据库
         String sourceUrl = "jdbc:sqlserver://localhost:1433;databaseName=school;trustServerCertificate=true";
         String sourceUser = "sa";
         String sourcePassword = "root";
         String sourceDatabase = "school";
-        //输入数据库
+        //输出数据库
         String targetDatabase = "school1";
         String targetUrl = "jdbc:mysql://localhost:3306/school1";
         String targetUser = "root";
@@ -43,12 +42,12 @@ public class Sqlserver2MySql {
 
         //建立连接
         try(
-        Connection sourceConnection = DbUtil.getConnectionWithoutRetry(DatabaseTypeEnum.MYSQL, sourceUrl, sourceUser, sourcePassword, "");
-        Connection targetConnection = DbUtil.getConnectionWithoutRetry(DatabaseTypeEnum.SQLSERVER,targetUrl,targetUser,targetPassword,"");
+        Connection sourceConnection = DbUtil.getConnectionWithoutRetry("com.mysql.cj.jdbc.Driver", sourceUrl, sourceUser, sourcePassword, "");
+        Connection targetConnection = DbUtil.getConnectionWithoutRetry("com.microsoft.sqlserver.jdbc.SQLServerDriver",targetUrl,targetUser,targetPassword,"");
         ){
             Statement sourceStatement = sourceConnection.createStatement();
             //Mysql 列出所有的表
-            List<String> tables = DbUtil.listSqlServerTables(sourceConnection);
+            List<String> tables = new ArrayList<>();
             Iterator<String> iterator = tables.stream().iterator();
             //key 表名 value 表的列的元数据
             Map<String, List<ColumnsMetaData>> columnsContainer = new ConcurrentHashMap<>();
@@ -60,7 +59,7 @@ public class Sqlserver2MySql {
                 String tableName = iterator.next();
                 DatabaseMetaData sourceMetaData = sourceConnection.getMetaData();
                 ResultSet sourceIndex = sourceMetaData.getIndexInfo(null, null, tableName, false, false);
-                ResultSet sourceKeys = sourceMetaData.getImportedKeys(null, null, tableName);
+                //ResultSet sourceKeys = sourceMetaData.getImportedKeys(null, null, tableName);
                 ResultSet sourceColumns = sourceMetaData.getColumns(null, null, tableName, null);
                 ResultSet sourcePrimaryKeys = sourceMetaData.getPrimaryKeys(null, null, tableName);
                 //列结构
@@ -106,7 +105,7 @@ public class Sqlserver2MySql {
                         case Types.VARCHAR:
                         case Types.CHAR:
                         case Types.BIT:
-                            if (column.getTypeName().equals(TypeNames.ENUM) || column.getTypeName().equals(TypeNames.SET)) {
+                            if (column.getTypeName().equals(TypeNameConstants.ENUM) || column.getTypeName().equals(TypeNameConstants.SET)) {
                                 String findColumType = "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + sourceDatabase + "' AND TABLE_NAME = '" + table + "' AND COLUMN_NAME =" + "\'" + column.getColumnName() + "\'";
                                 try {
                                     ResultSet columnType = sourceStatement.executeQuery(findColumType);

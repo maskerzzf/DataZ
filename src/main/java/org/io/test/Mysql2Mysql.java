@@ -4,7 +4,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.io.common.constant.SystemConstants;
-import org.io.common.constant.TypeNames;
+import org.io.common.constant.TypeNameConstants;
 import org.io.common.data.ColumnsMetaData;
 import org.io.common.data.DefaultRecord;
 import org.io.common.data.IndexInfoMetaData;
@@ -103,7 +103,7 @@ public class Mysql2Mysql {
                         case Types.VARCHAR:
                         case Types.CHAR:
                         case Types.BIT:
-                            if (column.getTypeName().equals(TypeNames.ENUM) || column.getTypeName().equals(TypeNames.SET)) {
+                            if (column.getTypeName().equals(TypeNameConstants.ENUM) || column.getTypeName().equals(TypeNameConstants.SET)) {
                                 String findColumType = "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + sourceDatabase + "' AND TABLE_NAME = '" + table + "' AND COLUMN_NAME =" + "\'" + column.getColumnName() + "\'";
                                 try {
                                     ResultSet columnType = sourceStatement.executeQuery(findColumType);
