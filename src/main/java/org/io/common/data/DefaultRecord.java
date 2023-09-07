@@ -1,38 +1,22 @@
 package org.io.common.data;
 
+
+import org.io.common.element.Column;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class DefaultRecord {
-    private List<Object> columns;
+    private List<Column> columns = new ArrayList<>();
 
-    public DefaultRecord() {
-        this.columns = new ArrayList<Object>();
-    }
-
-
-    public void addColumn(Object column) {
-        columns.add(column);
-    }
-    public Object getColumn(int i){
-        if (i < 0 || i >= columns.size()) {
-            return null;
-        }
-        return columns.get(i);
-    }
-
-    public List<Object> getColumns() {
+    public List<Column> getColumns() {
         return columns;
     }
 
-    public void setColumns(List<Object> columns) {
+    public void setColumns(List<Column> columns) {
         this.columns = columns;
     }
-
-    @Override
-    public String toString() {
-        return "DefaultRecord{" +
-                "columns=" + columns +
-                '}';
+    public void addColumn(Column column){
+        this.columns.add(column);
     }
 }

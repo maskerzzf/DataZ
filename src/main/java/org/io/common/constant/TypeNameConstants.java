@@ -16,4 +16,5 @@ public class TypeNameConstants {
     public static final String MONEY = "money";
     public static final String NTEXT = "ntext";
     public static final String TEXT="text";
+    public static final String FLOAT="float";
 }

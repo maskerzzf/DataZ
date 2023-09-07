@@ -8,8 +8,8 @@ public class TestGetTable {
 
 //        Mysql2Mysql mysql2mysql = new Mysql2Mysql();
 //        mysql2mysql.run();
-          Sqlserver2MySql sqlserver2MySql = new Sqlserver2MySql();
-          sqlserver2MySql.run();
+//          Sqlserver2MySql sqlserver2MySql = new Sqlserver2MySql();
+//          sqlserver2MySql.run();
 
     }
 

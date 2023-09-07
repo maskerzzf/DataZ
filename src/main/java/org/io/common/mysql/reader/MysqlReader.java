@@ -1,23 +1,21 @@
-package org.io.common.sqlserver.reader;
+package org.io.common.mysql.reader;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.io.common.constant.DriverConstants;
 import org.io.common.data.*;
+import org.io.common.sqlserver.reader.SqlserverReader;
 import org.io.common.util.DbUtil;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-
-public class SqlserverReader {
-
+public class MysqlReader {
     private Connection sourceConnection;
 
     private HashMap<String, List<ColumnsMetaData>> columnsContainer = new HashMap<>();
@@ -39,7 +37,7 @@ public class SqlserverReader {
 
     public TransitData post() {
         List<String> tables = listTables(sourceConnection);
-        log.info("Sqlserver数据库包含的表" + tables);
+        log.info("Mysql数据库包含的表" + tables);
         if (tables.isEmpty()) {
             return null;
         }
@@ -55,19 +53,12 @@ public class SqlserverReader {
         return transitData;
     }
 
-    public void destroy() {
-        try {
-            this.sourceConnection.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    //列出sqlserver的所有表
-    public  List<String> listTables(Connection connection) {
+    private List<String> listTables(Connection connection, String database) {
         List<String> tableList = new ArrayList<>();
-        try (Statement statement = connection.createStatement();) {
-            String querySql = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'";
-            ResultSet resultSet = statement.executeQuery(querySql);
+        String querySql = "SELECT table_name FROM information_schema.tables where table_schema = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(querySql);) {
+            preparedStatement.setString(1, database);
+            ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 String tableName = resultSet.getString("TABLE_NAME");
                 tableList.add(tableName);
@@ -75,7 +66,17 @@ public class SqlserverReader {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
         return tableList;
     }
+
+    public void destroy() {
+        try {
+            this.sourceConnection.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
 }

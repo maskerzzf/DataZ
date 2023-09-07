@@ -1,9 +1,11 @@
 package org.io.common.util;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.io.common.constant.SystemConstants;
 import org.io.common.constant.TypeNameConstants;
 import org.io.common.data.*;
+import org.io.common.element.*;
 import org.io.common.resource.ColumnsResource;
 import org.io.common.resource.IndexInfoResource;
 import org.io.common.resource.PrimaryKeysResource;
@@ -48,7 +50,6 @@ public class DbUtil {
     //列出mysql的所有表
     public static List<String> listMySqlTables(Connection connection, String database) {
         List<String> tableList = new ArrayList<>();
-
         String querySql = "SELECT table_name FROM information_schema.tables where table_schema = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(querySql);) {
             preparedStatement.setString(1, database);
@@ -160,8 +161,6 @@ public class DbUtil {
 
     //提取数据
     public static void findDbData(List<String> tables, Connection sourceConnection, Map<String, List<ColumnsMetaData>> columnsContainer, HashMap<String, List<DefaultRecord>> recordContainer) {
-        final byte[] EMPTY_CHAR_ARRAY = new byte[0];
-
         Statement sourceStatement = null;
         try {
             sourceStatement = sourceConnection.createStatement();
@@ -177,76 +176,74 @@ public class DbUtil {
                 while (data.next()) {
                     DefaultRecord record = new DefaultRecord();
                     columnsContainer.get(table).forEach((column) -> {
-                        System.out.println(column.toString());
                         try {
+                            String columnName = column.getColumnName();
                             switch (column.getDataType()) {
+
                                 case Types.CHAR:
                                 case Types.NCHAR:
                                 case Types.VARCHAR:
                                 case Types.LONGVARCHAR:
                                 case Types.NVARCHAR:
                                 case Types.LONGNVARCHAR:
-                                    String rowData = new String((data.getBytes(column.getColumnName()) == null ? EMPTY_CHAR_ARRAY :
-                                            data.getBytes(column.getColumnName())));
-                                    record.addColumn(rowData);
+                                    String rawData;
+                                    rawData = data.getString(columnName);
+                                    record.addColumn(new StringColumn(rawData));
                                     break;
-                                case Types.CLOB:
-                                case Types.NCLOB:
-                                    record.addColumn(data.getString(column.getColumnName()));
-                                    break;
+
                                 case Types.SMALLINT:
                                 case Types.TINYINT:
                                 case Types.INTEGER:
                                 case Types.BIGINT:
-                                    record.addColumn(new BigDecimal(data.getString(column.getColumnName())).toBigInteger());
+                                    record.addColumn(new LongColumn(data.getString(columnName)));
                                     break;
 
                                 case Types.NUMERIC:
-                                case Types.DECIMAL:
-                                case Types.FLOAT:
-                                case Types.REAL:
-                                case Types.DOUBLE:
-                                    record.addColumn(new BigDecimal(data.getString(column.getColumnName())));
+                                case Types.DECIMAL, Types.FLOAT, Types.REAL, Types.DOUBLE:
+                                    record.addColumn(new DoubleColumn(data.getString(columnName)));
                                     break;
 
                                 case Types.TIME:
-                                    record.addColumn(data.getTime(column.getColumnName()));
+                                    record.addColumn(new DateColumn(data.getTime(columnName)));
                                     break;
 
+                                // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                                 case Types.DATE:
-                                    if (column.getTypeName().toLowerCase().equals("year")) {
-                                        record.addColumn(BigInteger.valueOf(data.getInt(column.getColumnName())));
+                                    if ("year".equalsIgnoreCase(column.getTypeName())) {
+                                        record.addColumn(new LongColumn(data.getInt(columnName)));
                                     } else {
-                                        record.addColumn(data.getDate(column.getColumnName()).getTime());
+                                        record.addColumn(new DateColumn(data.getDate(columnName)));
                                     }
                                     break;
 
                                 case Types.TIMESTAMP:
-                                    record.addColumn(data.getTimestamp(column.getColumnName()) == null?null:data.getTimestamp(column.getColumnName()).getTime());
+                                    record.addColumn(new DateColumn(data.getTimestamp(columnName)));
                                     break;
 
                                 case Types.BINARY:
                                 case Types.VARBINARY:
                                 case Types.BLOB:
                                 case Types.LONGVARBINARY:
-                                    record.addColumn(ArrayUtils.clone(data.getBytes(column.getColumnName())));
+                                    record.addColumn(new BytesColumn(data.getBytes(columnName)));
                                     break;
 
+                                // warn: bit(1) -> Types.BIT 可使用BoolColumn
+                                // warn: bit(>1) -> Types.VARBINARY 可使用BytesColumn
                                 case Types.BOOLEAN:
                                 case Types.BIT:
-                                    record.addColumn(data.getBoolean(column.getColumnName()));
+                                    record.addColumn(new BoolColumn(data.getBoolean(columnName)));
                                     break;
 
                                 case Types.NULL:
                                     String stringData = null;
-                                    if (data.getObject(column.getColumnName()) != null) {
-                                        stringData = data.getObject(column.getColumnName()).toString();
+                                    if (data.getObject(columnName) != null) {
+                                        stringData = data.getObject(columnName).toString();
                                     }
-                                    record.addColumn(stringData);
+                                    record.addColumn(new StringColumn(stringData));
                                     break;
-                                default:
-                                    record.addColumn(data.getObject(column.getColumnName()));
 
+                                default:
+                                    record.addColumn(new StringColumn(data.getString(columnName)));
                             }
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
@@ -260,7 +257,15 @@ public class DbUtil {
             }
         });
     }
-
+    //将list划分为多个list
+    public static <T> List<List<T>> partition(List<T> list, int partitionSize) {
+        List<List<T>> partitions = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += partitionSize) {
+            int end = Math.min(i + partitionSize, list.size());
+            partitions.add(list.subList(i, end));
+        }
+        return partitions;
+    }
 
     public static HashMap<String, List<ConfigurableColumnsData>> convertColumnsData(HashMap<String, List<ColumnsMetaData>> columnsContainer) {
         HashMap<String, List<ConfigurableColumnsData>> container = new HashMap<>();
@@ -270,6 +275,7 @@ public class DbUtil {
                 ConfigurableColumnsData data = new ConfigurableColumnsData();
                 data.setTableSchem(column.getTableSchem());
                 data.setColumnDef(column.getColumnDef());
+                data.setOrdinalPosition(column.getOrdinalPosition());
                 data.setColumnName(column.getColumnName());
                 data.setDataType(column.getDataType());
                 data.setColumnSize(column.getColumnSize());

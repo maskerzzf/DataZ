@@ -14,4 +14,5 @@ public class ConfigurableColumnsData {
     private int decimalDigits;
     private String isAutoincrement;
     private String columnDef;
+    private int ordinalPosition;
 }
